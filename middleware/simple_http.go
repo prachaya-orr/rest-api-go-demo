@@ -72,11 +72,21 @@ func logMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+type Logger struct {
+	Handler http.Handler
+}
+
 func main() {
-	http.HandleFunc("/users", logMiddleware(usersHandler))
-	http.HandleFunc("/health", logMiddleware(healthHandler))
+	mux := http.NewServeMux()
+	mux.HandleFunc("/users", usersHandler)
+	mux.HandleFunc("/health", healthHandler)
+
+	srv := http.Server{
+		Addr:    ":2566",
+		Handler: mux,
+	}
 
 	log.Println("Server stared at http://localhost:2566")
-	log.Fatal(http.ListenAndServe(":2566", nil))
+	log.Fatal(srv.ListenAndServe())
 	log.Println("bye bye!")
 }
