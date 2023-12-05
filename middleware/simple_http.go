@@ -64,26 +64,34 @@ func healthHandler(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte("OK"))
 }
 
-func logMiddleware(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		start := time.Now()
-		log.Printf("Server http middleware: %s %s %s %s", req.RemoteAddr, req.Method, req.URL, time.Since(start))
-		next.ServeHTTP(w, req)
-	}
-}
+// func logMiddleware(next http.HandlerFunc) http.HandlerFunc {
+// 	return func(w http.ResponseWriter, req *http.Request) {
+// 		start := time.Now()
+// 		next.ServeHTTP(w, req)
+// 		log.Printf("Server http middleware: %s %s %s %s", req.RemoteAddr, req.Method, req.URL, time.Since(start))
+// 	}
+// }
 
 type Logger struct {
 	Handler http.Handler
 }
 
+func (l Logger) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
+	l.Handler.ServeHTTP(w, r)
+	log.Printf("Server http middleware: %s %s %s %s", r.RemoteAddr, r.Method, r.URL, time.Since(start))
+}
+
 func main() {
-	mux := http.NewServeMux()
+	mux := http.NewServeMux() // multiplexer
 	mux.HandleFunc("/users", usersHandler)
 	mux.HandleFunc("/health", healthHandler)
 
+	logMux := Logger{Handler: mux}
+
 	srv := http.Server{
 		Addr:    ":2566",
-		Handler: mux,
+		Handler: logMux,
 	}
 
 	log.Println("Server stared at http://localhost:2566")
