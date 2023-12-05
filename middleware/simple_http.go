@@ -21,6 +21,9 @@ var users = []User{
 }
 
 func usersHandler(w http.ResponseWriter, req *http.Request) {
+	u, p, ok := req.BasicAuth()
+	log.Println("auth:", u, p, ok)
+
 	if req.Method == "GET" {
 		b, err := json.Marshal(users)
 		if err != nil {
@@ -82,9 +85,30 @@ func (l Logger) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Server http middleware: %s %s %s %s", r.RemoteAddr, r.Method, r.URL, time.Since(start))
 }
 
+func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		u, p, ok := r.BasicAuth()
+		log.Println("auth:", u, p, ok)
+
+		if !ok {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte(`can't parse the basic auth`))
+			return
+		}
+
+		if u != "admin" || p != "1234" {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte(`username or password incorrect`))
+			return
+		}
+		fmt.Println("Auth passed.")
+		next(w, r)
+	}
+}
+
 func main() {
 	mux := http.NewServeMux() // multiplexer
-	mux.HandleFunc("/users", usersHandler)
+	mux.HandleFunc("/users", AuthMiddleware((usersHandler)))
 	mux.HandleFunc("/health", healthHandler)
 
 	logMux := Logger{Handler: mux}
