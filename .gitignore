@@ -1,1 +1,3 @@
 /encoder
+.env
+.env.local
