@@ -2,20 +2,25 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/gofiber/template/html/v2"
+	fiber "github.com/gofiber/fiber/v2"
+	html "github.com/gofiber/template/html/v2"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	engine := html.New("./views", ".html")
 	app := fiber.New(fiber.Config{
 		Views: engine,
 	},
 	)
-
-	app.Use(logger.New())
 
 	app.Get("/books", getBooks)
 	app.Get("/books/:id", getBookById)
@@ -25,6 +30,8 @@ func main() {
 
 	app.Post("/upload", uploadFile)
 	app.Get("/test-html", testHTML)
+
+	app.Get("/config", getEnv)
 
 	app.Listen(":8080")
 }
@@ -48,6 +55,13 @@ func uploadFile(c *fiber.Ctx) error {
 func testHTML(c *fiber.Ctx) error {
 	return c.Render("index", fiber.Map{
 		"Title": "Hello, World!",
-		"Name": "Go Learner",
+		"Name":  "Go Learner",
+	})
+}
+
+func getEnv(c *fiber.Ctx) error {
+
+	return c.JSON(fiber.Map{
+		"SECRET": os.Getenv("SECRET"),
 	})
 }
