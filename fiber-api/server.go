@@ -3,12 +3,17 @@ package main
 import (
 	"fmt"
 
-	fiber "github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/template/html/v2"
 )
 
 func main() {
-	app := fiber.New()
+	engine := html.New("./views", ".html")
+	app := fiber.New(fiber.Config{
+		Views: engine,
+	},
+	)
 
 	app.Use(logger.New())
 
@@ -19,6 +24,7 @@ func main() {
 	app.Delete("/books/:id", deleteBook)
 
 	app.Post("/upload", uploadFile)
+	app.Get("/test-html", testHTML)
 
 	app.Listen(":8080")
 }
@@ -37,4 +43,11 @@ func uploadFile(c *fiber.Ctx) error {
 	}
 
 	return c.SendString("File uploaded successfully!")
+}
+
+func testHTML(c *fiber.Ctx) error {
+	return c.Render("index", fiber.Map{
+		"Title": "Hello, World!",
+		"Name": "Go Learner",
+	})
 }
